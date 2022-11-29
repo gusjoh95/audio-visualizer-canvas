@@ -137,14 +137,14 @@ window.addEventListener("load", function () {
 	faces = document.querySelectorAll(".face");
 	this.document.querySelector("#getUserGesture").addEventListener("click", function handler(e) {
 		navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function (stream) {
+			document.querySelector("#onLoadOverlay").style.display = "none";
+			e.target.removeEventListener("click", handler);
 			createAudioListener(stream);
 		})
 			.catch(function (err) {
 				console.log("ERROR:" + err);
 				//createAudioListener(document.querySelector("#audioPlayer"));
 			});
-		console.log(e.target);
-		e.target.removeEventListener("click", handler);
 	});
 	document.addEventListener("keyup", function (e) {
 		//E.keycode is depricated – to be replaced with: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code
