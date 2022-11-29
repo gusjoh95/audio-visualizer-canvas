@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title></title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+	<div id="temporaryBackground">
+		<!-- Used as background on page load -->
+	</div>
+	<div id="onLoadOverlay">
+		<h1>Audio visualizer</h1>
+		<h2>Warning – flashing lights may occur!</h2>
+		<h3>Introduction</h3>
+		<p>This is a work-in-progress demonstration on how the <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/Media_Capture_and_Streams_API">Capture and Streams API</a> can be used to render different visualizations.</p>
+		<p>The visualization is done by capturing system audio through an input device (where <a target="_blank" href="https://www.howtogeek.com/howto/39532/how-to-enable-stereo-mix-in-windows-7-to-record-audio/"> Stereo Mix</a> or other virtualization technology, such as <a target="_blank" href="https://vb-audio.com/Cable/">Virtual Audio Cable</a>, is prefereable to a real microphone).</p>
+		<p>No audio is ever transmitted over the internet – all data is streamed and processed locally on your device.</p>
+		<h3>Controls:</h3>
+		<p>Press CTRL or ESC to bring up the options menu at any time.</p>
+		<p>Press F11 to maximize your browser window.</p>
+		<h3>Getting started</h3>
+		<p>Press the button below (you must select an input device for the visualization to function). You might have to clear your browser's site settings if you've previously declined or blocked the site from accessing input devices.</p>
+		<button id="getUserGesture">Click this</button>
+	</div>
+	<div id="optionOverlay">
+		<h3>Amount of ants and faces</h3>
+		<input type="range" min="0" max="5000" value="10" class="slider" id="amount">
+		<input type="checkbox" class="checkbox" name="ro2">Render ants<br>
+		Ant size<br>
+		<input type="range" min="0.01" max="10" value="0.1" step="0.01" class="slider" id="antSize">
+		<input type="checkbox" class="checkbox" name="ro1">Render faces<br>
+		<h3>Sound time smoothening</h3>
+		<input type="range" min="0.01" max="0.99" value=".5" step="0.01" class="slider" id="smoothingTime">
+		<input class="checkbox" checked type="checkbox" name="ro3">Render background<br>
+		<h3>Background color intensity</h3>
+		<input type="range" min="0" max="3" value=".0" step="0.1" class="slider" id="colorIntensity">
+		<h3>Render waveform as bars</h3>
+		<input type="checkbox" class="checkbox" checked name="ro4">Render waveform<br>
+		<h3>Experimental audio</h3>
+		AnalyserArrayDecreaseLength<br>
+		<input type="range" min="1" max="100" value="1" step="1" class="slider" id="analyserArrayMaxLength">
+		AnalyserFrequencyDetailSize<br>
+		<input type="range" min="5" max="15" value="11" step="1" class="slider" id="analyserFrequencies">
+		Volume threshold<br>
+		<input type="range" min="0" max="99" value="20" step="1" class="slider" id="minDecibelThreshold">
+		<div id="hiddenButUsedContent">
+			<div id="colorBox"></div>
+			<img class="face" src="res/img/img1.png">
+			<img class="face" src="res/img/img2.png">
+			<img class="face" src="res/img/img3.png">
+		</div>
+	</div>
+	<div class="canvasContainer">
+		<canvas id="canvasElement"></canvas>
+	</div>
+	<canvas id="inlineSpectro"></canvas>
+	<script type="text/javascript" src="script.js"></script>
+</body>
+
+</html>
