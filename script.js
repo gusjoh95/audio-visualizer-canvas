@@ -1,4 +1,12 @@
 "use strict";
+import {createAudioListener, setAnalyserFftSize,,setDataArrayLength, resetDataArray, analyser, dataArray} from "./audioHandler.js";
+import AntCollection from "./components/AntCollection.js";
+import globals from "./globals.js";
+//GLOBALS
+
+var faces;
+var ants;
+
 
 class squaredImage {
 	constructor(x, y, width, height, imgIndex = 0) {
@@ -10,7 +18,7 @@ class squaredImage {
 	}
 	render(base, tremble) {
 		this.updateXY(base, tremble);
-		ctx.drawImage(faces[this.imgIndex], this.x - base / 2, this.y - tremble / 2, base, tremble);
+		globals.ctx.drawImage(faces[this.imgIndex], this.x - base / 2, this.y - tremble / 2, base, tremble);
 
 	}
 	updateXY(base, tremble) {
@@ -19,46 +27,6 @@ class squaredImage {
 	}
 }
 
-var antSize = .2;
-var antMove = .02;
-class Ant {
-	constructor(x, y, width, height, size = 0.5) {
-		this.x = x;
-		this.y = y;
-		this.width = width;
-		this.height = height;
-	}
-	render(base, tremble, rgbString) {
-		this.updateXY(base, tremble);
-		ctx.fillStyle = rgbString;
-		ctx.fillRect(this.x - tremble * antSize / 2, this.y - tremble * antSize / 2, tremble * antSize, tremble * antSize);
-		ctx.fillStyle = "black";
-		ctx.fillRect(1 + this.x - tremble * antSize / 2, 1 + this.y - tremble * antSize / 2, +tremble * antSize - 2, +tremble * antSize - 2);
-	}
-	updateXY(base, tremble) {
-		var min = -base * antMove;
-		var max = base * antMove;
-		//console.log(Math.floor(Math.random() * (+max - +min)) + +min); 
-		this.x += Math.round(Math.random() * (+max - +min) + +min);
-		this.y += Math.round(Math.random() * (+max - +min) + +min);
-		this.handleOutOfBounds();
-	}
-
-	handleOutOfBounds() {
-		if (this.x < -20) {
-			this.x = CE.width;
-		}
-		if (this.y < -20) {
-			this.y = CE.height;
-		}
-		if (this.x > CE.width + 20) {
-			this.x = 0;
-		}
-		if (this.y > CE.height + 20) {
-			this.y = 0;
-		}
-	}
-}
 
 class Spectrogram {
 	constructor(canvasEl, canvasContext) {
@@ -94,19 +62,19 @@ class Timeinfo {
 			this.ocr = 0;
 			this.oneSec = performance.now();
 		}
-		ctx.fillStyle = "black";
-		ctx.fillRect(0, 0, 100, 35)
-		ctx.fillStyle = color;
-		ctx.font = "12px Arial";
-		ctx.fillText(this.timestampString, 10, 20);
+		globals.ctx.fillStyle = "black";
+		globals.ctx.fillRect(0, 0, 100, 35)
+		globals.ctx.fillStyle = color;
+		globals.ctx.font = "12px Arial";
+		globals.ctx.fillText(this.timestampString, 10, 20);
 
 	}
 }
 
 class OverlayCanvas {
 	constructor(w, h) {
-		this.ilCE = document.querySelector("#inlineSpectro");
-		this.ilCTX = this.ilCE.getContext("2d");
+		this.ilCE = globals.ilCE;
+		this.ilCTX = globals.ilCTX;
 		this.ilCE.width = w;
 		this.ilCE.height = h;
 		this.specc = new Spectrogram(this.ilCE, this.ilCTX);
@@ -118,19 +86,6 @@ class OverlayCanvas {
 	}
 }
 
-//GLOBAL VARIABLES
-var audioCTX;
-var audioSRC;
-var analyser;
-var dataArray;
-var loudness;
-
-var CE = document.querySelector("#canvasElement");
-//https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas
-var ctx = CE.getContext("2d", { alpha: false });
-var faces;
-
-window.addEventListener("resize", setCanvasSize);
 
 window.addEventListener("load", function () {
 	console.log("Window loaded");
@@ -140,10 +95,13 @@ window.addEventListener("load", function () {
 			document.querySelector("#onLoadOverlay").style.display = "none";
 			e.target.removeEventListener("click", handler);
 			createAudioListener(stream);
+      console.log(analyser);
+      window.addEventListener("resize", setCanvasSize);
+      setCanvasSize();
+      window.requestAnimationFrame(renderCanvas);
 		})
 			.catch(function (err) {
-				console.log("ERROR:" + err);
-				//createAudioListener(document.querySelector("#audioPlayer"));
+				console.trace("ERROR:" + err);
 			});
 	});
 	document.addEventListener("keyup", function (e) {
@@ -164,24 +122,6 @@ window.addEventListener("load", function () {
 	}
 });
 
-function createAudioListener(streamOrRef) {
-	audioCTX = new (window.AudioContext || window.webkitAudioContext)();
-	audioSRC = audioCTX.createMediaStreamSource(streamOrRef);
-	analyser = audioCTX.createAnalyser();
-	analyser.minDecibels = -80;
-	analyser.maxDecibels = 0;
-	analyser.smoothingTimeConstant = .5;
-	audioSRC.connect(analyser);
-	analyser.fftSize = 2048;
-	//analyser.frequencyBinCount;
-
-	dataArray = new Uint8Array(analyser.frequencyBinCount);
-	analyser.getByteFrequencyData(dataArray);
-	//setInterval(logAudioLevels, 500);
-	setCanvasSize();
-	window.requestAnimationFrame(renderCanvas);
-}
-
 function handleSliderInput(e) {
 	switch (e.currentTarget.id) {
 		case "amount":
@@ -189,6 +129,7 @@ function handleSliderInput(e) {
 			instantiateObjects();
 			break;
 		case "antSize":
+      //TODO, not working
 			antSize = e.currentTarget.value;
 			break;
 		case "smoothingTime":
@@ -198,19 +139,19 @@ function handleSliderInput(e) {
 			rgbMultiplier = e.currentTarget.value;
 			break;
 		case "analyserArrayMaxLength":
-			var temp = Math.ceil(analyser.frequencyBinCount - analyser.frequencyBinCount / 101 * e.currentTarget.value);
+			let length = Math.ceil(analyser.frequencyBinCount - analyser.frequencyBinCount / 101 * e.currentTarget.value);
 			//Does not average the input values, only changes length; i.e. frequencies to the right of the waveforms are more (or less) visible
-			console.log("Setting audio array max-length to: " + temp);
-			dataArray = new Uint8Array(temp);
+			console.log("Setting audio array max-length to: " + length);
+			setDataArrayLength(length);
 			instantiateObjects();
 			break;
 		case "analyserFrequencies":
 			//https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode/fftSize
 			//"A higher value will result in more details in the frequency domain but fewer details in the time domain."
 			//Must be: 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384 or 32768. Defaults to 2048.
-			analyser.fftSize = Math.pow(2, e.currentTarget.value);
-			dataArray = new Uint8Array(analyser.frequencyBinCount);
-			console.log("Frequency sample size: " + analyser.fftSize);
+			setAnalyserFftSize(Math.pow(2, e.currentTarget.value));
+      resetDataArray();
+      console.log("Frequency sample size: " + analyser.fftSize);
 			instantiateObjects();
 			break;
 		case "minDecibelThreshold":
@@ -269,9 +210,7 @@ function renderCanvas() {
 		});
 	}
 	if (RO2) {
-		ants.forEach(function (a) {
-			a.render((dataArray[0] + dataArray[5]) / 2, (dataArray[15] + dataArray[25]) / 2, rgbStringCycle);
-		});
+    ants.render();
 	}
 	if (RO4) {
 		spectro.render();
@@ -286,24 +225,13 @@ function renderCanvas() {
 
 function renderBackground(rgbString) {
 	//console.log(r + " " + g + " " +b);
-	ctx.fillStyle = rgbString;
-	ctx.fillRect(0, 0, CE.width, CE.height);
+	globals.ctx.fillStyle = rgbString;
+	globals.ctx.fillRect(0, 0, globals.CE.width, globals.CE.height);
 }
-
-
-
-function logAudioLevels() {
-	analyser.getByteFrequencyData(dataArray);
-	console.log("AudioLevels: " + dataArray[0] + " " + dataArray[5] + " " + dataArray[15] + " " + dataArray[25]);
-	console.log(getRGBstringAudio());
-	getRGBstringCycle();
-}
-
-
 
 function setCanvasSize() {
-	CE.width = window.innerWidth;
-	CE.height = window.innerHeight;
+	globals.CE.width = window.innerWidth;
+	globals.CE.height = window.innerHeight;
 	instantiateObjects();
 }
 
@@ -336,24 +264,21 @@ function getRGBstringAudio() {
 const colorBoxCycle = document.querySelector("#colorBox");
 function getRGBstringCycle() {
 	return window.getComputedStyle(colorBoxCycle).getPropertyValue('background-color');
-
 }
 
 var objectAmount = 10;
-var squaredImages = new Array();
-var ants = new Array();
+var squaredImages = [];
 var spectro;
 var timeinfo;
 var overlaycanvas;
 
 function instantiateObjects() {
 	squaredImages.length = 0;
-	ants.length = 0;
 	for (var i = 0; i < objectAmount; i++) {
-		squaredImages[i] = new squaredImage(Math.random() * CE.width, Math.random() * CE.height, 1, 1, i % faces.length);
-		ants[i] = new Ant(Math.random() * CE.width, Math.random() * CE.height, 1, 1);
+		squaredImages[i] = new squaredImage(Math.random() * globals.CE.width, Math.random() * globals.CE.height, 1, 1, i % faces.length);
 	}
-	spectro = new Spectrogram(CE, ctx);
+  ants = new AntCollection(objectAmount);
+	spectro = new Spectrogram(globals.CE, globals.ctx);
 	timeinfo = new Timeinfo();
 	onceFlag = true;
 	overlaycanvas = new OverlayCanvas(1500, 250);
